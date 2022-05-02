@@ -4,7 +4,7 @@ import pandas as pd
 from matplotlib import pyplot
 
 def get_input_base():
-    return 'd:/ou/output/phase7/7_sweeps_corrected/'
+    return 'd:/ou/input/phase7/7_sweeps_corrected/'
 
 def get_output_base():
     return 'd:/ou/output/phase7/8_temporal_sweeps/'
