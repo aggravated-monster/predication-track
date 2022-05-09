@@ -6,7 +6,7 @@ import phase8_svm_common as p8
 CLASSES = 2
 
 def get_output_base():
-    return 'd:/ou/output/phase8/svm/experiment/large/' + str(CLASSES) + '-classes/'
+    return 'c:/ou/output/phase8/svm/experiment/large/' + str(CLASSES) + '-classes/'
 
 def get_output_figures_base():
     return get_output_base() + "figures/"
@@ -16,7 +16,7 @@ def get_output_figure_name(prefix, suffix):
 
 def get_input_file():
     # the large dataset
-    return 'd:/ou/output/phase7/9_large_labeled_dataset/large_labeled_dataset.csv'
+    return 'c:/ou/output/phase7/9_large_labeled_dataset/large_labeled_dataset.csv'
 
 def get_predictions_file_name():
     return get_output_base() + 'predictions.csv'

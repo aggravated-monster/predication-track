@@ -89,7 +89,7 @@ def evaluate_group(c, kernel, df, features, group, feature_set, classes, seed, a
         'classes': classes
     }
 
-    repetitions = 100
+    repetitions = 10
 
     features.append("label")
     predictions, label_mapping = run_predictions(c, kernel, df, features, seed, repetitions, get_model, classes)

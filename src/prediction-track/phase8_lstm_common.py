@@ -30,11 +30,11 @@ def apply_padding(df):
     max_len = max([len(arr) for arr in df['sequence']])
 
     print(df['sequence'])
-    df['padded sequence'] = df['sequence'].apply(lambda seq : np.lib.pad(seq, ((max_len - len(seq),0),(0, 0)), 'constant', constant_values=100))
+    #df['padded sequence'] = df['sequence'].apply(lambda seq : np.lib.pad(seq, ((max_len - len(seq),0),(0, 0)), 'constant', constant_values=100))
+    # use padding value 0 in case of raw x or y positions
+    df['padded sequence'] = df['sequence'].apply(lambda seq : np.lib.pad(seq, ((max_len - len(seq),0),(0, 0)), 'constant', constant_values=0))
     print(df['padded sequence'])
     return df
-
-
 
 
 def create_model(learning_rate, num_features=2):
@@ -47,17 +47,53 @@ def create_model(learning_rate, num_features=2):
     model.add(CuDNNLSTM((40), return_sequences=False))
     model.add(Activation('tanh'))
     model.add(Dropout(0.2))
-    model.add(Dense(1, activation='sigmoid')) 
+    #model.add(Dense(1, activation='sigmoid'))
+    model.add(Dense(3, activation='softmax')) 
 
     # depending on version
     #opt = optimizers.Adam(lr=learning_rate, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
     opt = optimizers.adam_v2.Adam(lr=learning_rate)
 
     # Compile model
-    model.compile(loss='binary_crossentropy', 
+    #model.compile(loss='binary_crossentropy', 
+    model.compile(loss='categorical_crossentropy', 
                   optimizer=opt, 
                   metrics=['accuracy'])
     return model
+
+def prep_x_y_lstm_3_classes(df_in, features):
+
+    df_rf = df_in[features]
+    # drop the rows with null values
+    df_rf = df_rf.dropna()
+
+    X_dataset = df_rf.drop('label', axis=1)
+
+    # dummy encode the target variable
+    y = pd.get_dummies(df_rf['label']).values
+    print('Shape of label tensor:', y.shape)
+    label_mapping = None
+
+    print(X_dataset)
+    print(X_dataset.shape)
+    print(X_dataset.to_numpy().shape)
+
+    print(y.shape)
+    print(y)
+
+    X = []
+
+    for x in X_dataset.to_numpy():
+        x_arr = np.array(x[0])
+        X.append(x_arr)
+
+    
+    X = np.array(X)
+
+    print(X.shape)
+
+    return (X, y, label_mapping)
+
 
 def prep_x_y_lstm(df_in, features):
 
@@ -75,6 +111,9 @@ def prep_x_y_lstm(df_in, features):
     print(X_dataset)
     print(X_dataset.shape)
     print(X_dataset.to_numpy().shape)
+
+    print(y.shape)
+    print(y)
 
     X = []
 
@@ -125,12 +164,50 @@ def calculate_aggregates(scores):
         'f1 se': f1_se
     }
 
+def calculate_aggregates_3_classes(scores):
+    
+    df = pd.DataFrame.from_dict(scores)
+
+    acc_mean = np.mean(df['acc'])
+    acc_std = np.std(df['acc'])
+    acc_se = sem(df['acc'])
+
+    #precision_mean = np.mean(df['precision'])
+    #precision_std = np.std(df['precision'])
+    #precision_se = sem(df['precision'])
+
+    #recall_mean = np.mean(df['recall'])
+    #recall_std = np.std(df['recall'])
+    #recall_se = sem(df['recall'])
+
+    #f1_mean = np.mean(df['f1'])
+    #f1_std = np.std(df['f1'])
+    #f1_se = sem(df['f1'])
+
+    return {
+        'sample size': len(df),
+        'acc mean': acc_mean,
+        'acc std': acc_std, 
+        'acc se': acc_se, 
+        'precision mean': 'NA', 
+        'precision std': 'NA', 
+        'precision se': 'NA', 
+        'recall mean': 'NA', 
+        'recall std': 'NA', 
+        'recall se': 'NA', 
+        'f1 mean': 'NA', 
+        'f1 std': 'NA', 
+        'f1 se': 'NA'
+    }
+
 def do_prediction(X, y, learning_rate, seed, num_features=2):
     model = create_model(learning_rate, num_features)
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, stratify=y, random_state=seed)
 
-    history = model.fit(X_train, y_train, epochs=2000, validation_data=(X_test, y_test))
+    print(X.shape, y.shape)
+
+    history = model.fit(X_train, y_train, epochs=2, validation_data=(X_test, y_test))
     # predict
     y_true, y_pred = y_test, model.predict(X_test)
 
@@ -140,24 +217,69 @@ def do_prediction(X, y, learning_rate, seed, num_features=2):
 
     return y_true, y_pred, y_pred_norm, y_test, history
 
+
+def do_prediction_3_classes(X, y, learning_rate, seed, num_features=2):
+    model = create_model(learning_rate, num_features)
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, stratify=y, random_state=seed)
+
+    print(X.shape, y.shape)
+
+    history = model.fit(X_train, y_train, epochs=2000, validation_data=(X_test, y_test))
+    # predict
+    accr = model.evaluate(X_test,y_test)
+
+    loss = accr[0]
+    acc = accr[1]
+
+    return loss, acc, history
+
+
 def run_predictions(X, y, seed, repetitions, learning_rate, f_get_output_figure_name, num_features=2):
     
     predictions = []
 
     # do one rep for the pictures
-    y_true, y_pred, y_pred_norm, y_test, history = do_prediction(X, y, learning_rate, seed+1, num_features)
+    y_true, y_pred, y_pred_norm, y_test, history = do_prediction(X, y, learning_rate, seed+11, num_features)
 
     # plot last one to have graphics
-    plot_scatter(y_pred, y_test, learning_rate, f_get_output_figure_name)
-    plot_scatter(y_pred_norm, y_test, learning_rate, f_get_output_figure_name, True)
-    plot_loss(history, learning_rate, f_get_output_figure_name)
+    #plot_scatter(y_pred, y_test, learning_rate, f_get_output_figure_name)
+    #plot_scatter(y_pred_norm, y_test, learning_rate, f_get_output_figure_name, True)
+    #plot_loss(history, learning_rate, f_get_output_figure_name)
 
     for i in range(repetitions):
 
         y_true, y_pred, y_pred_norm, y_test, _ = do_prediction(X, y, learning_rate, 10*i + seed, num_features)
 
         # report on prediction
-        predictions.append(tsim.report_prediction_scores_as_dict(y_true, y_pred_norm))
+
+        predictions.append(tsim.report_prediction_scores_as_dict(y_true, y_pred_norm, 3))
+    
+
+    return predictions
+
+def run_predictions_3_classes(X, y, seed, repetitions, learning_rate, f_get_output_figure_name, num_features=2):
+    
+    predictions = []
+
+    # do one rep for the pictures
+    loss, acc, history = do_prediction_3_classes(X, y, learning_rate, seed+11, num_features)
+
+    # plot last one to have graphics
+    #plot_scatter(y_pred, y_test, learning_rate, f_get_output_figure_name)
+    #plot_scatter(y_pred_norm, y_test, learning_rate, f_get_output_figure_name, True)
+    plot_loss(history, learning_rate, f_get_output_figure_name)
+
+    for i in range(repetitions):
+
+        loss, acc,  _ = do_prediction_3_classes(X, y, learning_rate, 10*i + seed, num_features)
+
+        # report on prediction
+        res = {'loss': loss,
+                'acc': acc,
+                'classes': 3}
+
+        predictions.append(res)
     
 
     return predictions

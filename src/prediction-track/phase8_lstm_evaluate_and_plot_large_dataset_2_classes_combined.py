@@ -4,10 +4,10 @@ import pandas as pd
 
 
 def get_input_base():
-    return 'd:/ou/output/phase7/7_sweeps_corrected/'
+    return 'c:/ou/output/phase7/7_sweeps_corrected/'
 
 def get_output_base():
-    return 'd:/ou/output/phase8/lstm/large/2-classes/'
+    return 'c:/ou/output/phase8/lstm/large/2-classes-combined-eye-instrument_y/'
 
 def get_output_figures_base():
     return get_output_base() + "figures/"
@@ -43,14 +43,21 @@ def pre_process(input_file_path, df_labels, prefix, sweep):
     df_in = pd.read_csv(input_file_path)
 
     # take oonly the position columns
-    df_pos = df_in[['position_tool' ,'position_eye', 'subject', 'name']]
+    #df_pos = df_in[['position_tool' ,'position_eye', 'subject', 'name']]
+    #df_pos = df_in[['eye_x' ,'tooltip_x', 'subject', 'name']]
+    #df_pos = df_in[['tooltip_x' ,'tooltip_y', 'subject', 'name']]
+    df_pos = df_in[['eye_x', 'eye_y', 'tooltip_x' ,'tooltip_y', 'subject', 'name']]
 
     # drop the rows without name
     df_pos = df_pos[df_pos['name'].notna()]
 
     # drop the unknowns
-    df_pos = df_pos[df_pos['position_tool'] != 'U']
-    df_pos = df_pos[df_pos['position_eye'] != 'U']
+    #df_pos = df_pos[df_pos['position_tool'] != 'U']
+    #df_pos = df_pos[df_pos['position_eye'] != 'U']
+    #df_pos = df_pos[df_pos['eye_x'].notna()]
+    df_pos = df_pos[df_pos['eye_y'].notna()]
+    #df_pos = df_pos[df_pos['tooltip_x'].notna()]
+    df_pos = df_pos[df_pos['tooltip_y'].notna()]
 
     if df_pos.empty:
         return None
@@ -59,11 +66,21 @@ def pre_process(input_file_path, df_labels, prefix, sweep):
     df_pos = pd.merge(df_pos, df_labels, on=['subject'], how='left')
 
     # encode positions
-    df_pos["encoded tool position"] = df_pos.apply(lambda x : (pos_dict[x['position_tool']]), axis = 1)
-    df_pos["encoded eye position"] = df_pos.apply(lambda x : (pos_dict[x['position_eye']]), axis = 1)
+    #df_pos["encoded tool position"] = df_pos.apply(lambda x : (pos_dict[x['position_tool']]), axis = 1)
+    #df_pos["encoded eye position"] = df_pos.apply(lambda x : (pos_dict[x['position_eye']]), axis = 1)
+
+    #normalise
+    #df_pos["normalised eye_x"] = df_pos.apply(lambda x : x['eye_x']/1280, axis = 1)
+    #df_pos["normalised eye_y"] = df_pos.apply(lambda x : x['eye_y']/1024, axis = 1)
+    #df_pos["normalised tooltip_x"] = df_pos.apply(lambda x : x['tooltip_x']/1280, axis = 1)
+    #df_pos["normalised tooltip_y"] = df_pos.apply(lambda x : x['tooltip_y']/1024, axis = 1)
 
     # now pivot the encoded position column into an array
-    position_arr = df_pos[['encoded tool position', 'encoded eye position']].to_numpy()
+    #position_arr = df_pos[['encoded tool position', 'encoded eye position']].to_numpy()
+    #position_arr = df_pos[['eye_x', "tooltip_x"]].to_numpy()
+    position_arr = df_pos[['eye_y', "tooltip_y"]].to_numpy()
+    #position_arr = df_pos[['tooltip_x', "tooltip_y"]].to_numpy()
+    #position_arr = df_pos[['eye_y', 'tooltip_y']].to_numpy()
 
     #super lazy
     label_arr = df_pos['label'].to_numpy()
@@ -82,7 +99,8 @@ def do_experiment(df_in, learning_rate, seed):
     result_dict = {
         'model': 'lstm',
         'classes': 2,
-        'features':'encoded [tool_position, eye_position]',
+        #'features':'encoded [tool_position, eye_position]',
+        'features':'normalised [eye_y, tooltip_y]',
         'learning_rate': learning_rate,
         'label mapping': label_mapping
     }
@@ -144,7 +162,7 @@ if __name__ == "__main__":
         df.to_csv(get_output_file_name(suffix), index=False)
 
         #learning_rates = [0.001, 0.0001, 0.00001]
-        learning_rates = [0.001]
+        learning_rates = [0.0001]
 
         for learning_rate in learning_rates:
             # placeholder for summary

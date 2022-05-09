@@ -15,7 +15,7 @@ def get_output_figure_name(prefix, suffix):
 
 def get_input_file():
     # the small dataset
-    return 'd:/ou/output/phase7/12_small_labeled_dataset/small_labeled_dataset.csv'
+    return 'c:/ou/output/phase7/12_small_labeled_dataset/small_labeled_dataset.csv'
 
 def get_predictions_file_name():
     return get_output_base() + 'predictions.csv'
