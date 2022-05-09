@@ -306,7 +306,7 @@ def perform_model_search_3_classes(df_in, f_get_model, classifier, param_grid, f
 
     i=0
 
-    scorer = 'accuracy'
+    scorer = 'balanced_accuracy'
 
     # brute force the whole thing one by one
     for features_tuple in feature_list:
