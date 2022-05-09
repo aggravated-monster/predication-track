@@ -42,7 +42,7 @@ def prepare_training(X, y, seed=None):
 # do not do a grid search with jobs=-1 on a GPU
 def grid_search(X_train, y_train, model, scorer, param_grid, seed=None, jobs=-1):
     # define evaluation procedure
-    cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=1, random_state=seed)
+    cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=10, random_state=seed)
     # define grid search
     grid = GridSearchCV(estimator=model, param_grid=param_grid, verbose=2,n_jobs=jobs, cv=cv, scoring=scorer)
     # execute the grid search
@@ -88,12 +88,7 @@ def plot_confusion_matrix(features, y_true, y_pred, f_destination):
         del fig
 
 def report_prediction_scores(y_true, y_pred, classes=2):
-    class_report = classification_report(y_true, y_pred)
 
-    cm = confusion_matrix(y_true, y_pred)
-    cf_matrix = {'tn': cm[0, 0], 'fp': cm[0, 1], 'fn': cm[1, 0], 'tp': cm[1, 1]}
-
-    acc_pred = balanced_accuracy_score(y_true, y_pred)
     if classes == 2:
         precision_pred = precision_score(y_true, y_pred)
         recall_pred = recall_score(y_true, y_pred)
@@ -101,13 +96,21 @@ def report_prediction_scores(y_true, y_pred, classes=2):
         roc_auc_score_pred = roc_auc_score(y_true, y_pred)
         roc_curve_pred = roc_curve(y_true, y_pred)
         precision_recall_curve_pred = precision_recall_curve(y_true, y_pred)
+        class_report = classification_report(y_true, y_pred)
+        cm = confusion_matrix(y_true, y_pred)
+        cf_matrix = {'tn': cm[0, 0], 'fp': cm[0, 1], 'fn': cm[1, 0], 'tp': cm[1, 1]}
+        acc_pred = balanced_accuracy_score(y_true, y_pred)
     else:
         precision_pred = precision_score(y_true, y_pred, average='weighted')
         recall_pred = recall_score(y_true, y_pred, average='weighted')
         f1_pred = f1_score(y_true, y_pred, average='weighted')
         roc_auc_score_pred = None
         roc_curve_pred = None
-        precision_recall_curve_pred = None
+        precision_recall_curve_pred = None        
+        class_report = None
+        cm = None
+        cf_matrix = None
+        acc_pred = balanced_accuracy_score(y_true, y_pred)
 
 
     return (acc_pred, precision_pred, recall_pred, f1_pred, roc_auc_score_pred, class_report, cf_matrix, roc_curve_pred, precision_recall_curve_pred)

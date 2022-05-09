@@ -2,7 +2,7 @@ import tsi.tsi_sys as tsis
 import pandas as pd
 
 def get_ocr_input_base():
-    return 'D:/ou/output/phase5/corrected/'
+    return 'D:/ou/input/phase7/ocr_corrected/'
 
 def get_eye_input_base():
     return 'D:/ou/output/phase6/'

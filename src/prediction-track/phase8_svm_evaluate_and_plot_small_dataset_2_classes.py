@@ -5,7 +5,7 @@ import pandas as pd
 CLASSES = 2
 
 def get_output_base():
-    return 'c:/ou/output/phase8/svm/experiment/small/' + str(CLASSES) + '-classes/'
+    return 'd:/ou/output/phase8/svm/experiment/small/' + str(CLASSES) + '-classes/'
 
 def get_output_figures_base():
     return get_output_base() + "figures/"
@@ -23,6 +23,16 @@ def get_predictions_file_name():
 def get_aggregates_file_name():
     return get_output_base() + 'aggregates.csv'
 
+def evaluate_control(classes, df):
+
+    result = []
+
+    # highest single from research features
+    features = ['rings_moved']
+    res, _ = p8.evaluate_group(1, "rbf", df, features, "single", "research", classes, 3)
+    result.append(res)
+
+    return result
 
 def evaluate_highest_singles(classes, df):
 
@@ -148,6 +158,9 @@ if __name__ == "__main__":
         df = df_in[df_in['label'] != "Medium"]
     else:
         df = df_in
+
+    scores = evaluate_control(CLASSES, df)
+    result = result + scores
 
     scores = evaluate_highest_singles(CLASSES, df)
     result = result + scores

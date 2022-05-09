@@ -4,6 +4,7 @@ from sympy import ceiling
 from tensorflow import keras # for building Neural Networks
 print('Tensorflow/Keras: %s' % keras.__version__) # print version
 from scikeras.wrappers import KerasClassifier
+from keras.utils import np_utils
 import tsi.tsi_modeling as tsim
 import pandas as pd
 import numpy as np
@@ -68,6 +69,30 @@ def create_model_grid(n_features_in, X_shape, model_depth=2,
     
     # Compile model
     model.compile(loss='binary_crossentropy', 
+                  optimizer=optimizer, 
+                  metrics=['accuracy'])
+    return model
+
+def create_model_grid_3_classes(n_features_in, X_shape, model_depth=2,
+                      activation = 'tanh', 
+                      optimizer='adam', 
+                      init='glorot_uniform',
+                      ):
+    # create model
+    model = keras.models.Sequential()
+
+    number_of_neurons = ceiling((n_features_in + 2)/2)
+
+    model.add(keras.layers.Dense(n_features_in, input_shape=X_shape[1:]))
+    model.add(keras.layers.Activation(activation))
+    for i in range(model_depth):
+        model.add(keras.layers.Dense(number_of_neurons, kernel_initializer=init))
+        model.add(keras.layers.Activation(activation))
+    model.add(keras.layers.Dense(3))
+    model.add(keras.layers.Activation("softmax"))
+    
+    # Compile model
+    model.compile(loss='categorical_crossentropy', 
                   optimizer=optimizer, 
                   metrics=['accuracy'])
     return model
@@ -217,7 +242,6 @@ def prep_x_y(df_in, features):
 
     return (X, encoded_Y, label_mapping)
 
-
 def perform_model_search(df_in, f_get_model, classifier, param_grid, feature_list, f_destination, classes, seed):
     prediction_result = []
     search_result = []
@@ -269,6 +293,64 @@ def perform_model_search(df_in, f_get_model, classifier, param_grid, feature_lis
                 tsim.plot_confusion_matrix(features, y_true, y_pred, f_destination)
 
             prediction_result.append((classifier, features, label_mapping, len(y_train), len(y_test)) + prediction_report)
+
+
+    df_prediction_result = pd.DataFrame(prediction_result, columns=['model', 'features', 'label mapping', 'training size', 'test size', 'balanced accuracy', 'precision', 'recall', 'f1', 'roc_auc', 'classification report', 'confusion_matrix', 'roc curve', 'precision-recall curve'])
+    df_search_result = pd.DataFrame(search_result, columns=['features', 'classifier', 'scorer', 'best score', 'best estimator', 'best params', 'best_mean', 'best_std', 'best_se'])
+    
+    return (df_prediction_result, df_search_result)
+
+def perform_model_search_3_classes(df_in, f_get_model, classifier, param_grid, feature_list, f_destination, classes, seed):
+    prediction_result = []
+    search_result = []
+
+    i=0
+
+    scorer = 'balanced_accuracy'
+
+    # brute force the whole thing one by one
+    for features_tuple in feature_list:
+        i+=1 # is used foor seeding
+        features = list(features_tuple)
+        print("evaluating featureset: " + ",".join(features))
+        features.append('label') # always include the label
+
+        #X, y, label_mapping = prep_x_y_ffnn(df_in, features)
+        X, y, label_mapping = prep_x_y(df_in, features)
+
+        # wrap the model in a scikeras.KerasClassifier
+        model_grid = KerasClassifier(build_fn=f_get_model, epochs=50 ,verbose=0, n_features_in=len(features)-1, X_shape=X.shape, activation='tanh', model_depth=2)
+
+        X_train, X_test, y_train, y_test = tsim.prepare_training(X, y, seed) 
+
+        # last param is important! n_jobs cannot be -1, as GPU enabled search does not multithread
+        grid_result = tsim.grid_search(X_train, y_train, model_grid, scorer, param_grid, seed, None) 
+    
+        # report the best configuration
+        best_std = grid_result.cv_results_['std_test_score'][grid_result.best_index_]
+        best_mean = grid_result.cv_results_['mean_test_score'][grid_result.best_index_]
+        best_se = best_std / np.sqrt(np.size(X_train))
+
+        best_score = grid_result.best_score_
+        best_estimator = grid_result.best_estimator_
+        best_params = grid_result.best_params_
+
+        print(grid_result)
+
+        search_result.append((features, classifier, scorer, best_score, best_estimator, best_params, best_mean, best_std, best_se))
+
+        # predict
+        y_true, y_pred = y_test, grid_result.predict(X_test)
+
+        # report on prediction
+        prediction_report = tsim.report_prediction_scores(y_true, y_pred, 3)
+
+        if len(np.unique(y_true)) == 2:
+            #plot_precision_recall(features, best_estimator, X_test, y_test, f_destination)
+            #plot_roc(features, best_estimator, X_test, y_test, f_destination)
+            tsim.plot_confusion_matrix(features, y_true, y_pred, f_destination)
+
+        prediction_result.append((classifier, features, label_mapping, len(y_train), len(y_test)) + prediction_report)
 
 
     df_prediction_result = pd.DataFrame(prediction_result, columns=['model', 'features', 'label mapping', 'training size', 'test size', 'balanced accuracy', 'precision', 'recall', 'f1', 'roc_auc', 'classification report', 'confusion_matrix', 'roc curve', 'precision-recall curve'])
