@@ -24,6 +24,17 @@ def get_predictions_file_name():
 def get_aggregates_file_name():
     return get_output_base() + 'aggregates.csv'
 
+def evaluate_control(classes, df):
+
+    result = []
+
+    # highest single from research features
+    features = ['rings_moved']
+    res, _ = p8.evaluate_group(df, features, 2, 'rmsprop', 0.001, "control", "control", classes, 1)
+    result.append(res)
+
+    return result
+
 def evaluate_highest_singles(classes, df):
 
     result = []
@@ -206,20 +217,23 @@ if __name__ == "__main__":
     else:
         df = df_in
 
-    scores = evaluate_highest_singles(CLASSES, df)
+    scores = evaluate_control(CLASSES, df)
     result = result + scores
 
-    scores = evaluate_highest_pairs(CLASSES, df)
-    result = result + scores
+    #scores = evaluate_highest_singles(CLASSES, df)
+    #result = result + scores
 
-    scores = evaluate_highest_triplet(CLASSES, df)
-    result = result + scores
+    #scores = evaluate_highest_pairs(CLASSES, df)
+    #result = result + scores
 
-    scores = evaluate_highest_quartets(CLASSES, df)
-    result = result + scores
+    #scores = evaluate_highest_triplet(CLASSES, df)
+    #result = result + scores
 
-    scores = evaluate_highest_overall(CLASSES, df)
-    result = result + scores
+    #scores = evaluate_highest_quartets(CLASSES, df)
+    #result = result + scores
+
+    #scores = evaluate_highest_overall(CLASSES, df)
+    #result = result + scores
 
     df_result = pd.DataFrame(result)
 
