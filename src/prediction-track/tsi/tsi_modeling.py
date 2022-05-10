@@ -42,7 +42,7 @@ def prepare_training(X, y, seed=None):
 # do not do a grid search with jobs=-1 on a GPU
 def grid_search(X_train, y_train, model, scorer, param_grid, seed=None, jobs=-1):
     # define evaluation procedure
-    cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=10, random_state=seed)
+    cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=1, random_state=seed)
     # define grid search
     grid = GridSearchCV(estimator=model, param_grid=param_grid, verbose=2,n_jobs=jobs, cv=cv, scoring=scorer)
     # execute the grid search

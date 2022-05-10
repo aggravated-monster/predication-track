@@ -8,18 +8,18 @@ CLASSES = 3
 
 def get_output_base():
     # change output base depending on which data set and number of classes
-    return 'd:/ou/output/phase8/ffnn/modeling/large/3-classes/temporal/'
+    return 'c:/ou/output/phase8/ffnn/modeling/small/3-classes/research/'
 
 def get_evaluation_output_base():
     # change output base depending on which data set and number of classes
-    return 'd:/ou/output/phase8/ffnn/evaluation/small/3-classes/temporal/'
+    return 'c:/ou/output/phase8/ffnn/evaluation/small/3-classes/research/'
 
 def get_input_file():
     # change depending on which data set and number of classes
     # the small dataset
-    #return 'd:/ou/output/phase7/12_small_labeled_dataset/small_labeled_dataset.csv'
+    return 'c:/ou/output/phase7/12_small_labeled_dataset/small_labeled_dataset.csv'
     # the large dataset
-    return 'd:/ou/output/phase7/9_large_labeled_dataset/large_labeled_dataset.csv'
+    #return 'c:/ou/output/phase7/9_large_labeled_dataset/large_labeled_dataset.csv'
 
 def get_best_scores_file_name():
     return get_output_base() + 'best_scores.csv'
@@ -37,7 +37,7 @@ if __name__ == "__main__":
 
     all_scores = []
     # change depending on which features are to be evaluated
-    columns = tsid.get_temporal_columns_large()
+    columns = tsid.get_research_columns_small()
 
     tsis.make_dir(get_output_base())
     tsis.make_dir(get_evaluation_output_base())
