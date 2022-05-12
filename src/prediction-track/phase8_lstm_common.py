@@ -47,7 +47,9 @@ def create_model(learning_rate, num_features=2):
     model.add(CuDNNLSTM((40), return_sequences=False))
     model.add(Activation('tanh'))
     model.add(Dropout(0.2))
+    # for 2 classes
     #model.add(Dense(1, activation='sigmoid'))
+    # for 3 classes
     model.add(Dense(3, activation='softmax')) 
 
     # depending on version
@@ -56,6 +58,7 @@ def create_model(learning_rate, num_features=2):
 
     # Compile model
     #model.compile(loss='binary_crossentropy', 
+    # for 3 classes
     model.compile(loss='categorical_crossentropy', 
                   optimizer=opt, 
                   metrics=['accuracy'])
@@ -207,7 +210,7 @@ def do_prediction(X, y, learning_rate, seed, num_features=2):
 
     print(X.shape, y.shape)
 
-    history = model.fit(X_train, y_train, epochs=2, validation_data=(X_test, y_test))
+    history = model.fit(X_train, y_train, epochs=1000, validation_data=(X_test, y_test))
     # predict
     y_true, y_pred = y_test, model.predict(X_test)
 
@@ -225,7 +228,7 @@ def do_prediction_3_classes(X, y, learning_rate, seed, num_features=2):
 
     print(X.shape, y.shape)
 
-    history = model.fit(X_train, y_train, epochs=2000, validation_data=(X_test, y_test))
+    history = model.fit(X_train, y_train, epochs=1000, validation_data=(X_test, y_test))
     # predict
     accr = model.evaluate(X_test,y_test)
 
@@ -243,9 +246,9 @@ def run_predictions(X, y, seed, repetitions, learning_rate, f_get_output_figure_
     y_true, y_pred, y_pred_norm, y_test, history = do_prediction(X, y, learning_rate, seed+11, num_features)
 
     # plot last one to have graphics
-    #plot_scatter(y_pred, y_test, learning_rate, f_get_output_figure_name)
-    #plot_scatter(y_pred_norm, y_test, learning_rate, f_get_output_figure_name, True)
-    #plot_loss(history, learning_rate, f_get_output_figure_name)
+    plot_scatter(y_pred, y_test, learning_rate, f_get_output_figure_name)
+    plot_scatter(y_pred_norm, y_test, learning_rate, f_get_output_figure_name, True)
+    plot_loss(history, learning_rate, f_get_output_figure_name)
 
     for i in range(repetitions):
 
@@ -253,7 +256,7 @@ def run_predictions(X, y, seed, repetitions, learning_rate, f_get_output_figure_
 
         # report on prediction
 
-        predictions.append(tsim.report_prediction_scores_as_dict(y_true, y_pred_norm, 3))
+        predictions.append(tsim.report_prediction_scores_as_dict(y_true, y_pred_norm, 2))
     
 
     return predictions

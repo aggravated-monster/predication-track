@@ -7,7 +7,7 @@ def get_input_base():
     return 'c:/ou/output/phase7/7_sweeps_corrected/'
 
 def get_output_base():
-    return 'c:/ou/output/phase8/lstm/large/3-classes-eye_x_y/'
+    return 'c:/ou/output/phase8/lstm/large/3-classes-eye_x/'
 
 def get_output_figures_base():
     return get_output_base() + "figures/"
@@ -44,7 +44,7 @@ def pre_process(input_file_path, df_labels, prefix, sweep):
 
     # drop the unknowns
     df_pos = df_pos[df_pos['eye_x'].notna()]
-    df_pos = df_pos[df_pos['eye_y'].notna()]
+    #df_pos = df_pos[df_pos['eye_y'].notna()]
     #df_pos = df_pos[df_pos['tooltip_x'].notna()]
     #df_pos = df_pos[df_pos['tooltip_y'].notna()]
 
@@ -60,7 +60,7 @@ def pre_process(input_file_path, df_labels, prefix, sweep):
     #position_arr = df_pos[['eye_x', "tooltip_x"]].to_numpy()
     #position_arr = df_pos[['normalised eye_x', "normalised tooltip_x"]].to_numpy()
     #position_arr = df_pos[['tooltip_x', 'tooltip_y']].to_numpy()
-    position_arr = df_pos[['eye_x', 'eye_y']].to_numpy()
+    position_arr = df_pos[['eye_x']].to_numpy()
 
     #super lazy
     label_arr = df_pos['label'].to_numpy()
@@ -79,12 +79,12 @@ def do_experiment(df_in, learning_rate, seed):
     result_dict = {
         'model': 'lstm',
         'classes': 2,
-        'features':'raw [eye_x, eye_y]',
+        'features':'raw [eye_x]',
         'learning_rate': learning_rate,
         'label mapping': label_mapping
     }
 
-    predictions = p8.run_predictions_3_classes(X, y, seed, repetitions, learning_rate, get_output_figure_name, 2)
+    predictions = p8.run_predictions_3_classes(X, y, seed, repetitions, learning_rate, get_output_figure_name, 1)
 
     aggregates = p8.calculate_aggregates_3_classes(predictions)
     result_dict['aggregates'] = aggregates
