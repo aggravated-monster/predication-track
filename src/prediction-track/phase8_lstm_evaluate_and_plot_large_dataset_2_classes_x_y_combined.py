@@ -61,16 +61,9 @@ def pre_process(input_file_path, df_labels, prefix, sweep):
     # merge in the labels
     df_pos = pd.merge(df_pos, df_labels, on=['subject'], how='left')
 
-    #normalise
-    #df_pos["normalised eye_x"] = df_pos.apply(lambda x : x['eye_x']/1280, axis = 1)
-    #df_pos["normalised eye_y"] = df_pos.apply(lambda x : x['eye_y']/1024, axis = 1)
-    #df_pos["normalised tooltip_x"] = df_pos.apply(lambda x : x['tooltip_x']/1280, axis = 1)
-    #df_pos["normalised tooltip_y"] = df_pos.apply(lambda x : x['tooltip_y']/1024, axis = 1)
-
     # now pivot the encoded position column into an array
     #position_arr = df_pos[['encoded tool position', 'encoded eye position']].to_numpy()
     #position_arr = df_pos[['eye_x', "tooltip_x"]].to_numpy()
-    #position_arr = df_pos[['normalised eye_x', "normalised tooltip_x"]].to_numpy()
     position_arr = df_pos[['eye_x', 'eye_y', 'tooltip_x', "tooltip_y"]].to_numpy()
 
     #super lazy

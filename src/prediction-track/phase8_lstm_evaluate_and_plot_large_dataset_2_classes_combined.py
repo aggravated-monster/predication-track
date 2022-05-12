@@ -7,7 +7,7 @@ def get_input_base():
     return 'c:/ou/output/phase7/7_sweeps_corrected/'
 
 def get_output_base():
-    return 'c:/ou/output/phase8/lstm/large/2-classes-combined-eye-instrument_y/'
+    return 'c:/ou/output/phase8/lstm/large/2-classes-tooltip_x_y/'
 
 def get_output_figures_base():
     return get_output_base() + "figures/"
@@ -55,8 +55,8 @@ def pre_process(input_file_path, df_labels, prefix, sweep):
     #df_pos = df_pos[df_pos['position_tool'] != 'U']
     #df_pos = df_pos[df_pos['position_eye'] != 'U']
     #df_pos = df_pos[df_pos['eye_x'].notna()]
-    df_pos = df_pos[df_pos['eye_y'].notna()]
-    #df_pos = df_pos[df_pos['tooltip_x'].notna()]
+    #df_pos = df_pos[df_pos['eye_y'].notna()]
+    df_pos = df_pos[df_pos['tooltip_x'].notna()]
     df_pos = df_pos[df_pos['tooltip_y'].notna()]
 
     if df_pos.empty:
@@ -69,17 +69,11 @@ def pre_process(input_file_path, df_labels, prefix, sweep):
     #df_pos["encoded tool position"] = df_pos.apply(lambda x : (pos_dict[x['position_tool']]), axis = 1)
     #df_pos["encoded eye position"] = df_pos.apply(lambda x : (pos_dict[x['position_eye']]), axis = 1)
 
-    #normalise
-    #df_pos["normalised eye_x"] = df_pos.apply(lambda x : x['eye_x']/1280, axis = 1)
-    #df_pos["normalised eye_y"] = df_pos.apply(lambda x : x['eye_y']/1024, axis = 1)
-    #df_pos["normalised tooltip_x"] = df_pos.apply(lambda x : x['tooltip_x']/1280, axis = 1)
-    #df_pos["normalised tooltip_y"] = df_pos.apply(lambda x : x['tooltip_y']/1024, axis = 1)
-
     # now pivot the encoded position column into an array
     #position_arr = df_pos[['encoded tool position', 'encoded eye position']].to_numpy()
     #position_arr = df_pos[['eye_x', "tooltip_x"]].to_numpy()
-    position_arr = df_pos[['eye_y', "tooltip_y"]].to_numpy()
-    #position_arr = df_pos[['tooltip_x', "tooltip_y"]].to_numpy()
+    #position_arr = df_pos[['eye_x', "eye_y"]].to_numpy()
+    position_arr = df_pos[['tooltip_x', "tooltip_y"]].to_numpy()
     #position_arr = df_pos[['eye_y', 'tooltip_y']].to_numpy()
 
     #super lazy
@@ -100,7 +94,7 @@ def do_experiment(df_in, learning_rate, seed):
         'model': 'lstm',
         'classes': 2,
         #'features':'encoded [tool_position, eye_position]',
-        'features':'normalised [eye_y, tooltip_y]',
+        'features':'raw [tooltip_x, tooltip_y]',
         'learning_rate': learning_rate,
         'label mapping': label_mapping
     }

@@ -143,7 +143,7 @@ if __name__ == "__main__":
         df.to_csv(get_output_file_name(suffix), index=False)
 
         #learning_rates = [0.001, 0.0001, 0.00001]
-        learning_rates = [0.0001]
+        learning_rates = [0.001]
 
         for learning_rate in learning_rates:
             # placeholder for summary
