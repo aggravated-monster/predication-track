@@ -43,11 +43,44 @@ def create_model(n_features_in, X_shape, model_depth=2,
     scikeras_classifier = KerasClassifier(model=neural_classifier,
                                         optimizer__learning_rate=learning_rate,
                                         batch_size=8,
-                                        epochs=100,
+                                        epochs=1000,
                                         verbose=1,
                                         random_state=seed
                                         )
     return scikeras_classifier
+
+def create_model_lustig(n_features_in, X_shape,
+                      seed=None,
+                      optimizer='adam', 
+                      learning_rate=0.1,
+                      activation = 'tanh', 
+                      init='glorot_uniform'
+                      ):
+    # create model
+    neural_classifier = keras.models.Sequential()
+
+    neural_classifier.add(keras.layers.Dense(n_features_in, input_shape=X_shape[1:]))
+    neural_classifier.add(keras.layers.Activation(activation))
+    neural_classifier.add(keras.layers.Dense(64, kernel_initializer=init))
+    neural_classifier.add(keras.layers.Activation(activation))
+    neural_classifier.add(keras.layers.Dense(1))
+    neural_classifier.add(keras.layers.Activation("sigmoid"))
+    
+    # Compile model
+    neural_classifier.compile(loss='binary_crossentropy', 
+                  optimizer=optimizer, 
+                  metrics=['accuracy'])
+    
+    # wrap in KerasClassifier
+    scikeras_classifier = KerasClassifier(model=neural_classifier,
+                                        optimizer__learning_rate=learning_rate,
+                                        batch_size=8,
+                                        epochs=1000,
+                                        verbose=1,
+                                        random_state=seed
+                                        )
+    return scikeras_classifier
+
 
 def create_model_grid(n_features_in, X_shape, model_depth=2,
                       activation = 'tanh', 
@@ -98,7 +131,7 @@ def create_model_grid_3_classes(n_features_in, X_shape, model_depth=2,
     return model
 
 
-def evaluate_group(df_in, features, model_depth, optimizer, learning_rate, group, feature_set, classes, seed, accumulator='none'):
+def evaluate_group(df_in, features, model_depth, optimizer, learning_rate, group, feature_set, classes, seed, f_get_output_figure_name, accumulator='none'):
     aggregates = []
 
     result_dict = {
@@ -107,13 +140,13 @@ def evaluate_group(df_in, features, model_depth, optimizer, learning_rate, group
         'classes': classes
     }
 
-    repetitions = 100
+    repetitions = 10
 
     features.append("label")
 
     X, y, label_mapping = prep_x_y(df_in, features)
 
-    predictions = run_predictions(X, y, seed, repetitions, features, model_depth, optimizer, learning_rate)
+    predictions = run_predictions(X, y, seed, repetitions, features, model_depth, optimizer, learning_rate, f_get_output_figure_name, feature_set, group)
     aggregates = calculate_aggregates(predictions)
     result_dict['feature set'] = feature_set
     result_dict['features'] = features
@@ -131,18 +164,47 @@ def evaluate_group(df_in, features, model_depth, optimizer, learning_rate, group
 
     return result_dict, accumulator
 
+def do_prediction(X, y, learning_rate, seed, model_depth, optimizer, num_features=2):
+    model = create_model(num_features, X.shape, model_depth, seed, optimizer, learning_rate)
 
-def run_predictions(X, y, seed, repetitions, features, model_depth, optimizer, learning_rate):
+    X_train, X_test, y_train, y_test = tsim.prepare_training(X, y, seed)
+
+    print(X.shape, y.shape)
+
+    history = model.fit(X_train, y_train, epochs=1000, validation_data=(X_test, y_test))
+    # predict
+    y_true, y_pred = y_test, model.predict(X_test)
+
+    return y_true, y_pred, y_test, history
+
+
+def do_prediction_3_classes(X, y, learning_rate, seed, model_depth, optimizer, num_features=2):
+    model = create_model(num_features, X.shape, model_depth, seed, optimizer, learning_rate)
+
+    X_train, X_test, y_train, y_test = tsim.prepare_training(X, y, seed)
+
+    print(X.shape, y.shape)
+
+    history = model.fit(X_train, y_train, epochs=2000, validation_data=(X_test, y_test))
+    # predict
+    accr = model.evaluate(X_test, y_test)
+
+    loss = accr[0]
+    acc = accr[1]
+
+    return loss, acc, history
+
+
+def run_predictions(X, y, seed, repetitions, features, model_depth, optimizer, learning_rate, f_get_output_figure_name, feature_set, group):
 
     predictions = []
+
+    # do one rep for the loss graph
+    y_true, y_pred, y_test, history = do_prediction(X, y, learning_rate, seed+11, model_depth, optimizer, len(features))
+    plot_loss(history, feature_set, group, f_get_output_figure_name)
     
     for i in range(repetitions):
-        model = create_model(len(features), X.shape, model_depth, seed, optimizer, learning_rate)
-        X_train, X_test, y_train, y_test = tsim.prepare_training(X, y, seed + 10*i)
-        model.fit(X_train, y_train)
-
-        # predict
-        y_true, y_pred = y_test, model.predict(X_test)
+        y_true, y_pred, y_test, history = do_prediction(X, y, learning_rate, seed + 10*i, model_depth, optimizer, len(features))
 
         # report on prediction
         predictions.append(tsim.report_prediction_scores_as_dict(y_true, y_pred))
@@ -200,6 +262,11 @@ def plot_scatterplot(group, df, features, feature_set, f_get_output_figure_name)
     sns.set(rc = {'figure.figsize':(8,8)})
     sns.scatterplot(data = df, x=features[0], y=features[1], hue='label')
     plt.savefig(f_get_output_figure_name(group, feature_set + '_scatter'), bbox_inches='tight')
+    plt.close()
+
+def plot_loss(history, feature_set, group, f_get_output_figure_name):
+    plt.plot(history.history_['loss'])
+    plt.savefig(f_get_output_figure_name(feature_set, group), bbox_inches='tight')
     plt.close()
 
 def prepare_report(df_scores, nr_of_runs):

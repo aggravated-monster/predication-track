@@ -44,7 +44,8 @@ def grid_search(X_train, y_train, model, scorer, param_grid, seed=None, jobs=-1)
     # define evaluation procedure
     cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=1, random_state=seed)
     # define grid search
-    grid = GridSearchCV(estimator=model, param_grid=param_grid, verbose=2,n_jobs=jobs, cv=cv, scoring=scorer)
+    #grid = GridSearchCV(estimator=model, param_grid=param_grid, verbose=2,n_jobs=jobs, cv=cv, scoring=scorer)
+    grid = GridSearchCV(estimator=model, param_grid=param_grid, verbose=2,n_jobs=jobs, scoring=scorer)
     # execute the grid search
     return grid.fit(X_train, y_train)
 
