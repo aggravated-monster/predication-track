@@ -184,17 +184,17 @@ if __name__ == "__main__":
     scores = evaluate_highest_singles(CLASSES, df_in)
     result = result + scores
 
-    #scores = evaluate_highest_singles(CLASSES, df_in)
-    #result = result + scores
+    scores = evaluate_highest_singles(CLASSES, df_in)
+    result = result + scores
 
-    #scores = evaluate_highest_pairs(CLASSES, df_in)
-    #result = result + scores
+    scores = evaluate_highest_pairs(CLASSES, df_in)
+    result = result + scores
 
-    #scores = evaluate_highest_triplet(CLASSES, df_in)
-    #result = result + scores
+    scores = evaluate_highest_triplet(CLASSES, df_in)
+    result = result + scores
 
-    #scores = evaluate_highest_overall(CLASSES, df_in)
-    #result = result + scores
+    scores = evaluate_highest_overall(CLASSES, df_in)
+    result = result + scores
 
     df_result = pd.DataFrame(result)
 
