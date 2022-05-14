@@ -12,6 +12,7 @@ from scipy.stats import sem
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import OneHotEncoder
 from sklearn.model_selection import train_test_split
 
 def create_model(n_features_in, X_shape, model_depth=2,
@@ -43,7 +44,42 @@ def create_model(n_features_in, X_shape, model_depth=2,
     scikeras_classifier = KerasClassifier(model=neural_classifier,
                                         optimizer__learning_rate=learning_rate,
                                         batch_size=8,
-                                        epochs=1000,
+                                        epochs=2000,
+                                        verbose=1,
+                                        random_state=seed
+                                        )
+    return scikeras_classifier
+
+def create_model_3_classes(n_features_in, X_shape, model_depth=2,
+                      seed=None,
+                      optimizer='adam', 
+                      learning_rate=0.1,
+                      activation = 'tanh', 
+                      init='glorot_uniform'
+                      ):
+    # create model
+    neural_classifier = keras.models.Sequential()
+
+    number_of_neurons = ceiling((n_features_in + 2)/2)
+
+    neural_classifier.add(keras.layers.Dense(n_features_in, input_shape=X_shape[1:]))
+    neural_classifier.add(keras.layers.Activation(activation))
+    for i in range(model_depth):
+        neural_classifier.add(keras.layers.Dense(number_of_neurons, kernel_initializer=init))
+        neural_classifier.add(keras.layers.Activation(activation))
+    neural_classifier.add(keras.layers.Dense(3))
+    neural_classifier.add(keras.layers.Activation("softmax"))
+    
+    # Compile model
+    neural_classifier.compile(loss='categorical_crossentropy', 
+                  optimizer=optimizer, 
+                  metrics=['accuracy'])
+    
+    # wrap in KerasClassifier
+    scikeras_classifier = KerasClassifier(model=neural_classifier,
+                                        optimizer__learning_rate=learning_rate,
+                                        batch_size=8,
+                                        epochs=10,
                                         verbose=1,
                                         random_state=seed
                                         )
@@ -75,7 +111,7 @@ def create_model_lustig(n_features_in, X_shape,
     scikeras_classifier = KerasClassifier(model=neural_classifier,
                                         optimizer__learning_rate=learning_rate,
                                         batch_size=8,
-                                        epochs=1000,
+                                        epochs=2000,
                                         verbose=1,
                                         random_state=seed
                                         )
@@ -144,10 +180,17 @@ def evaluate_group(df_in, features, model_depth, optimizer, learning_rate, group
 
     features.append("label")
 
-    X, y, label_mapping = prep_x_y(df_in, features)
 
-    predictions = run_predictions(X, y, seed, repetitions, features, model_depth, optimizer, learning_rate, f_get_output_figure_name, feature_set, group)
-    aggregates = calculate_aggregates(predictions)
+
+    if classes == 2:
+        X, y, label_mapping = prep_x_y(df_in, features)
+        predictions = run_predictions(X, y, seed, repetitions, features, model_depth, optimizer, learning_rate, f_get_output_figure_name, feature_set, group)
+        aggregates = calculate_aggregates(predictions)
+    else:
+        X, y, label_mapping = prep_x_y_3_classes(df_in, features)
+        predictions = run_predictions_3_classes(X, y, seed, repetitions, features, model_depth, optimizer, learning_rate, f_get_output_figure_name, feature_set, group)
+        aggregates = calculate_aggregates_3_classes(predictions)
+
     result_dict['feature set'] = feature_set
     result_dict['features'] = features
     result_dict['label mapping'] = label_mapping
@@ -171,7 +214,7 @@ def do_prediction(X, y, learning_rate, seed, model_depth, optimizer, num_feature
 
     print(X.shape, y.shape)
 
-    history = model.fit(X_train, y_train, epochs=1000, validation_data=(X_test, y_test))
+    history = model.fit(X_train, y_train, epochs=2000, validation_data=(X_test, y_test))
     # predict
     y_true, y_pred = y_test, model.predict(X_test)
 
@@ -179,20 +222,26 @@ def do_prediction(X, y, learning_rate, seed, model_depth, optimizer, num_feature
 
 
 def do_prediction_3_classes(X, y, learning_rate, seed, model_depth, optimizer, num_features=2):
-    model = create_model(num_features, X.shape, model_depth, seed, optimizer, learning_rate)
+    model = create_model_3_classes(num_features, X.shape, model_depth, seed, optimizer, learning_rate)
 
     X_train, X_test, y_train, y_test = tsim.prepare_training(X, y, seed)
 
     print(X.shape, y.shape)
 
-    history = model.fit(X_train, y_train, epochs=2000, validation_data=(X_test, y_test))
+    history = model.fit(X_train, y_train, epochs=2, validation_data=(X_test, y_test))
+
     # predict
-    accr = model.evaluate(X_test, y_test)
+    y_true, y_pred = y_test, model.predict(X_test)
 
-    loss = accr[0]
-    acc = accr[1]
+    return y_true, y_pred, y_test, history
 
-    return loss, acc, history
+    # predict
+    #ccr = model.evaluate(X_test, y_test)
+
+    #loss = accr[0]
+    #acc = accr[1]
+
+    #return loss, acc, history
 
 
 def run_predictions(X, y, seed, repetitions, features, model_depth, optimizer, learning_rate, f_get_output_figure_name, feature_set, group):
@@ -208,6 +257,22 @@ def run_predictions(X, y, seed, repetitions, features, model_depth, optimizer, l
 
         # report on prediction
         predictions.append(tsim.report_prediction_scores_as_dict(y_true, y_pred))
+
+    return predictions
+
+def run_predictions_3_classes(X, y, seed, repetitions, features, model_depth, optimizer, learning_rate, f_get_output_figure_name, feature_set, group):
+
+    predictions = []
+
+    # do one rep for the loss graph
+    y_true, y_pred, y_test, history = do_prediction_3_classes(X, y, learning_rate, seed+11, model_depth, optimizer, len(features))
+    plot_loss(history, feature_set, group, f_get_output_figure_name)
+    
+    for i in range(repetitions):
+        y_true, y_pred, y_test, history = do_prediction_3_classes(X, y, learning_rate, seed + 10*i, model_depth, optimizer, len(features))
+
+        # report on prediction
+        predictions.append(tsim.report_prediction_scores_as_dict(y_true, y_pred, 3, True))
 
     return predictions
 
@@ -247,6 +312,31 @@ def calculate_aggregates(scores):
         'f1 std': f1_std, 
         'f1 se': f1_se
     }
+
+def calculate_aggregates_3_classes(scores):
+    
+    df = pd.DataFrame.from_dict(scores)
+
+    acc_mean = np.mean(df['acc'])
+    acc_std = np.std(df['acc'])
+    acc_se = sem(df['acc'])
+
+    return {
+        'sample size': len(df),
+        'acc mean': acc_mean,
+        'acc std': acc_std, 
+        'acc se': acc_se, 
+        'precision mean': 'NA', 
+        'precision std': 'NA', 
+        'precision se': 'NA', 
+        'recall mean': 'NA', 
+        'recall std': 'NA', 
+        'recall se': 'NA', 
+        'f1 mean': 'NA', 
+        'f1 std': 'NA', 
+        'f1 se': 'NA'
+    }
+
 
 def plot_boxplot(group, df, f_get_output_figure_name):
 
@@ -308,6 +398,34 @@ def prep_x_y(df_in, features):
     label_mapping = dict(zip(le.classes_, le.transform(le.classes_)))
 
     return (X, encoded_Y, label_mapping)
+
+def prep_x_y_3_classes(df_in, features):
+
+    df = df_in[features]
+    # drop the rows with null values
+    df = df.dropna()
+
+    size = len(df.columns)-1
+    dataset = df.values
+
+    X = dataset[1:,0:size].astype(float)
+    Y = dataset[1:,size]
+
+    #https://machinelearningmastery.com/how-to-one-hot-encode-sequence-data-in-python/#:~:text=A%20one%20hot%20encoding%20is,is%20marked%20with%20a%201.
+    # encode class values as integers
+    le = LabelEncoder()
+    integer_encoded = le.fit_transform(Y)
+    print(integer_encoded)
+    # binary encode
+    onehot_encoder = OneHotEncoder(sparse=False)
+    integer_encoded = integer_encoded.reshape(len(integer_encoded), 1)
+    onehot_encoded_y = onehot_encoder.fit_transform(integer_encoded)
+    print(onehot_encoded_y)
+    # invert first example
+
+    label_mapping = dict(zip(le.classes_, le.transform(le.classes_)))
+
+    return (X, onehot_encoded_y, label_mapping)
 
 def perform_model_search(df_in, f_get_model, classifier, param_grid, feature_list, f_destination, classes, seed):
     prediction_result = []

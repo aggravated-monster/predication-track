@@ -3,7 +3,7 @@ from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import balanced_accuracy_score, classification_report, confusion_matrix, f1_score, precision_score, recall_score, roc_auc_score, roc_curve, precision_recall_curve
+from sklearn.metrics import accuracy_score, balanced_accuracy_score, classification_report, confusion_matrix, f1_score, precision_score, recall_score, roc_auc_score, roc_curve, precision_recall_curve
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import PrecisionRecallDisplay
 from sklearn.metrics import RocCurveDisplay
@@ -29,6 +29,17 @@ def cross_validate_model(X, y, model, seed):
     return scores, np.mean(scores), np.std(scores), sem(scores)
 
 def prepare_training(X, y, seed=None):
+    # Split the dataset into training and test set
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, stratify=y, random_state=seed) # stratify because of imbalanced set
+    
+    # scale the dataset
+    ss = StandardScaler()
+    X_train = ss.fit_transform(X_train)
+    X_test = ss.transform(X_test)
+
+    return X_train, X_test, y_train, y_test
+
+def prepare_training_3_classes(X, y, seed=None):
     # Split the dataset into training and test set
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, stratify=y, random_state=seed) # stratify because of imbalanced set
     
@@ -88,7 +99,7 @@ def plot_confusion_matrix(features, y_true, y_pred, f_destination):
         plt.close('all')
         del fig
 
-def report_prediction_scores(y_true, y_pred, classes=2):
+def report_prediction_scores(y_true, y_pred, classes=2, onehot=False):
 
     if classes == 2:
         precision_pred = precision_score(y_true, y_pred)
@@ -111,14 +122,18 @@ def report_prediction_scores(y_true, y_pred, classes=2):
         class_report = None
         cm = None
         cf_matrix = None
-        acc_pred = balanced_accuracy_score(y_true, y_pred)
+        if onehot:
+            acc_pred = accuracy_score(y_true, y_pred )
+        else:
+            acc_pred = balanced_accuracy_score(y_true, y_pred)
+
 
 
     return (acc_pred, precision_pred, recall_pred, f1_pred, roc_auc_score_pred, class_report, cf_matrix, roc_curve_pred, precision_recall_curve_pred)
 
-def report_prediction_scores_as_dict(y_true, y_pred, classes=2):
+def report_prediction_scores_as_dict(y_true, y_pred, classes=2, onehot=False):
 
-    acc_pred, precision_pred, recall_pred, f1_pred, roc_auc_score_pred, class_report, cf_matrix, roc_curve_pred, precision_recall_curve_pred = report_prediction_scores(y_true, y_pred, classes)
+    acc_pred, precision_pred, recall_pred, f1_pred, roc_auc_score_pred, class_report, cf_matrix, roc_curve_pred, precision_recall_curve_pred = report_prediction_scores(y_true, y_pred, classes, onehot)
 
     return {
         'acc': acc_pred,

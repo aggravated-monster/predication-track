@@ -8,11 +8,11 @@ CLASSES = 3
 
 def get_output_base():
     # change output base depending on which data set and number of classes
-    return 'd:/ou/output/phase8/ffnn/modeling/large/3-classes/gaze/'
+    return 'c:/ou/output/phase8/ffnn/modeling/large/3-classes/research/'
 
 def get_evaluation_output_base():
     # change output base depending on which data set and number of classes
-    return 'd:/ou/output/phase8/ffnn/evaluation/large/3-classes/gaze/'
+    return 'c:/ou/output/phase8/ffnn/evaluation/large/3-classes/research/'
 
 def get_input_file():
     # change depending on which data set and number of classes
@@ -37,7 +37,7 @@ if __name__ == "__main__":
 
     all_scores = []
     # change depending on which features are to be evaluated
-    columns = tsid.get_gaze_colums_large()
+    columns = tsid.get_research_columns_large()
 
     tsis.make_dir(get_output_base())
     tsis.make_dir(get_evaluation_output_base())
