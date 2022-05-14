@@ -228,20 +228,12 @@ def do_prediction_3_classes(X, y, learning_rate, seed, model_depth, optimizer, n
 
     print(X.shape, y.shape)
 
-    history = model.fit(X_train, y_train, epochs=2, validation_data=(X_test, y_test))
+    history = model.fit(X_train, y_train, epochs=1000, validation_data=(X_test, y_test))
 
     # predict
     y_true, y_pred = y_test, model.predict(X_test)
 
     return y_true, y_pred, y_test, history
-
-    # predict
-    #ccr = model.evaluate(X_test, y_test)
-
-    #loss = accr[0]
-    #acc = accr[1]
-
-    #return loss, acc, history
 
 
 def run_predictions(X, y, seed, repetitions, features, model_depth, optimizer, learning_rate, f_get_output_figure_name, feature_set, group):
