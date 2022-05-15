@@ -5,6 +5,7 @@ from tensorflow import keras # for building Neural Networks
 print('Tensorflow/Keras: %s' % keras.__version__) # print version
 from scikeras.wrappers import KerasClassifier
 from keras.utils import np_utils
+from random import randrange
 import tsi.tsi_modeling as tsim
 import pandas as pd
 import numpy as np
@@ -228,7 +229,7 @@ def do_prediction_3_classes(X, y, learning_rate, seed, model_depth, optimizer, n
 
     print(X.shape, y.shape)
 
-    history = model.fit(X_train, y_train, epochs=1000, validation_data=(X_test, y_test))
+    history = model.fit(X_train, y_train, epochs=2000, validation_data=(X_test, y_test))
 
     # predict
     y_true, y_pred = y_test, model.predict(X_test)
@@ -348,7 +349,7 @@ def plot_scatterplot(group, df, features, feature_set, f_get_output_figure_name)
 
 def plot_loss(history, feature_set, group, f_get_output_figure_name):
     plt.plot(history.history_['loss'])
-    plt.savefig(f_get_output_figure_name(feature_set, group), bbox_inches='tight')
+    plt.savefig(f_get_output_figure_name(feature_set, group + str(randrange(0, 100))), bbox_inches='tight')
     plt.close()
 
 def prepare_report(df_scores, nr_of_runs):
