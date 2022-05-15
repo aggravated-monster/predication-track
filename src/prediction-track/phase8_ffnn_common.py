@@ -86,38 +86,6 @@ def create_model_3_classes(n_features_in, X_shape, model_depth=2,
                                         )
     return scikeras_classifier
 
-def create_model_lustig(n_features_in, X_shape,
-                      seed=None,
-                      optimizer='adam', 
-                      learning_rate=0.1,
-                      activation = 'tanh', 
-                      init='glorot_uniform'
-                      ):
-    # create model
-    neural_classifier = keras.models.Sequential()
-
-    neural_classifier.add(keras.layers.Dense(n_features_in, input_shape=X_shape[1:]))
-    neural_classifier.add(keras.layers.Activation(activation))
-    neural_classifier.add(keras.layers.Dense(64, kernel_initializer=init))
-    neural_classifier.add(keras.layers.Activation(activation))
-    neural_classifier.add(keras.layers.Dense(1))
-    neural_classifier.add(keras.layers.Activation("sigmoid"))
-    
-    # Compile model
-    neural_classifier.compile(loss='binary_crossentropy', 
-                  optimizer=optimizer, 
-                  metrics=['accuracy'])
-    
-    # wrap in KerasClassifier
-    scikeras_classifier = KerasClassifier(model=neural_classifier,
-                                        optimizer__learning_rate=learning_rate,
-                                        batch_size=8,
-                                        epochs=2000,
-                                        verbose=1,
-                                        random_state=seed
-                                        )
-    return scikeras_classifier
-
 
 def create_model_grid(n_features_in, X_shape, model_depth=2,
                       activation = 'tanh', 
@@ -180,8 +148,6 @@ def evaluate_group(df_in, features, model_depth, optimizer, learning_rate, group
     repetitions = 10
 
     features.append("label")
-
-
 
     if classes == 2:
         X, y, label_mapping = prep_x_y(df_in, features)
